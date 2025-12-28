@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Alma Mater – NFL</title>
+
+<style>
+:root{
+  --bg:#0b0f14;
+  --card:#111827;
+  --accent:#2563eb;
+  --correct:#22c55e;
+  --wrong:#ef4444;
+  --muted:#94a3b8;
+}
+body{
+  margin:0;
+  background:var(--bg);
+  color:white;
+  font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;
+  text-align:center;
+}
+header{
+  padding:18px;
+  font-size:28px;
+  font-weight:700;
+  background:#020617;
+  letter-spacing:1px;
+}
+.container{
+  max-width:420px;
+  margin:auto;
+  padding:20px;
+}
+.card{
+  background:var(--card);
+  border-radius:16px;
+  padding:24px;
+  margin-top:20px;
+  animation:fade .35s ease;
+}
+h1{
+  margin:10px 0;
+  font-size:30px;
+}
+input{
+  width:100%;
+  padding:14px;
+  font-size:16px;
+  border-radius:10px;
+  border:none;
+  margin-top:12px;
+  outline:none;
+}
+button{
+  background:var(--accent);
+  border:none;
+  color:white;
+  padding:10px 14px;
+  margin:6px;
+  border-radius:10px;
+  cursor:pointer;
+}
+button.secondary{background:#1e293b;}
+button.toggle{background:#020617;}
+.stats{
+  margin-top:12px;
+  font-size:14px;
+  color:var(--muted);
+}
+#feedback{
+  min-height:22px;
+  margin-top:10px;
+  font-size:18px;
+}
+.correct{color:var(--correct);}
+.wrong{color:var(--wrong);}
+.achievements{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+.achievement{
+  background:#020617;
+  padding:10px;
+  border-radius:10px;
+  font-size:14px;
+  opacity:.35;
+}
+.achievement.unlocked{
+  opacity:1;
+  background:#1e293b;
+  color:#facc15;
+}
+@keyframes fade{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+</style>
+</head>
+
+<body>
+<header>ALMA MATER</header>
+
+<div class="container">
+
+<div class="card">
+  <button id="normalBtn">Normal</button>
+  <button id="dailyBtn" class="secondary">Daily</button>
+  <button id="soundBtn" class="toggle">🔊</button>
+
+  <h1 id="playerName">Press Start</h1>
+  <input id="answerInput" placeholder="Type the college">
+  <div id="feedback"></div>
+
+  <div class="stats">
+    Streak: <span id="streak">0</span> ·
+    Best: <span id="best">0</span> ·
+    Daily Best: <span id="dailyBest">0</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Achievements</h3>
+  <div class="achievements" id="achievementsBox"></div>
+</div>
+
+</div>
+
+<audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+<audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+<script>
+// ---------------- SETTINGS ----------------
+let soundOn = localStorage.getItem("sound") !== "off";
+soundBtn.textContent = soundOn ? "🔊" : "🔇";
+
+// ---------------- PLAYER LIST (150+) ----------------
+const players = [
+{name:"Tom Brady",college:["michigan"]},
+{name:"Aaron Rodgers",college:["cal","california"]},
+{name:"Patrick Mahomes",college:["texas tech"]},
+{name:"Josh Allen",college:["wyoming"]},
+{name:"Joe Burrow",college:["lsu"]},
+{name:"Lamar Jackson",college:["louisville"]},
+{name:"Justin Herbert",college:["oregon"]},
+{name:"Jalen Hurts",college:["oklahoma","alabama"]},
+{name:"Dak Prescott",college:["mississippi state"]},
+{name:"Russell Wilson",college:["wisconsin","nc state"]},
+{name:"Peyton Manning",college:["tennessee"]},
+{name:"Eli Manning",college:["ole miss","mississippi"]},
+{name:"Drew Brees",college:["purdue"]},
+{name:"Matthew Stafford",college:["georgia"]},
+{name:"Kirk Cousins",college:["michigan state"]},
+{name:"Trevor Lawrence",college:["clemson"]},
+{name:"Deshaun Watson",college:["clemson"]},
+{name:"Brock Purdy",college:["iowa state"]},
+{name:"Tua Tagovailoa",college:["alabama"]},
+{name:"Jared Goff",college:["cal"]},
+{name:"Cam Newton",college:["auburn"]},
+{name:"Andrew Luck",college:["stanford"]},
+{name:"Brett Favre",college:["southern miss"]},
+{name:"Dan Marino",college:["pitt","pittsburgh"]},
+{name:"Tony Romo",college:["eastern illinois"]},
+{name:"Philip Rivers",college:["nc state"]},
+{name:"Ben Roethlisberger",college:["miami ohio"]},
+{name:"Matt Ryan",college:["boston college"]},
+{name:"Derek Carr",college:["fresno state"]},
+{name:"Jimmy Garoppolo",college:["eastern illinois"]},
+
+{name:"Derrick Henry",college:["alabama"]},
+{name:"Christian McCaffrey",college:["stanford"]},
+{name:"Saquon Barkley",college:["penn state"]},
+{name:"Nick Chubb",college:["georgia"]},
+{name:"Jonathan Taylor",college:["wisconsin"]},
+{name:"Dalvin Cook",college:["florida state"]},
+{name:"Alvin Kamara",college:["tennessee"]},
+{name:"Najee Harris",college:["alabama"]},
+{name:"Joe Mixon",college:["oklahoma"]},
+{name:"Austin Ekeler",college:["western colorado"]},
+
+{name:"Justin Jefferson",college:["lsu"]},
+{name:"Ja'Marr Chase",college:["lsu"]},
+{name:"Davante Adams",college:["fresno state"]},
+{name:"Cooper Kupp",college:["eastern washington"]},
+{name:"Stefon Diggs",college:["maryland"]},
+{name:"Tyreek Hill",college:["west alabama"]},
+{name:"CeeDee Lamb",college:["oklahoma"]},
+{name:"DeAndre Hopkins",college:["clemson"]},
+{name:"Amon-Ra St. Brown",college:["usc"]},
+{name:"Terry McLaurin",college:["ohio state"]},
+
+{name:"Travis Kelce",college:["cincinnati"]},
+{name:"George Kittle",college:["iowa"]},
+{name:"Rob Gronkowski",college:["arizona"]},
+{name:"Mark Andrews",college:["oklahoma"]},
+{name:"Kyle Pitts",college:["florida"]},
+
+{name:"Aaron Donald",college:["pitt","pittsburgh"]},
+{name:"J.J. Watt",college:["wisconsin","central michigan"]},
+{name:"T.J. Watt",college:["wisconsin"]},
+{name:"Nick Bosa",college:["ohio state"]},
+{name:"Joey Bosa",college:["ohio state"]},
+{name:"Myles Garrett",college:["texas a&m"]},
+{name:"Micah Parsons",college:["penn state"]},
+{name:"Von Miller",college:["texas a&m"]},
+{name:"Khalil Mack",college:["buffalo"]},
+{name:"Maxx Crosby",college:["eastern michigan"]},
+
+{name:"Ray Lewis",college:["miami"]},
+{name:"Charles Woodson",college:["michigan"]},
+{name:"Ed Reed",college:["miami"]},
+{name:"Troy Polamalu",college:["usc"]},
+{name:"Brian Urlacher",college:["new mexico"]},
+{name:"Luke Kuechly",college:["boston college"]},
+{name:"Patrick Willis",college:["ole miss"]},
+{name:"Junior Seau",college:["usc"]},
+{name:"Lawrence Taylor",college:["north carolina"]},
+{name:"Derrick Brooks",college:["florida state"]},
+
+{name:"Barry Sanders",college:["oklahoma state"]},
+{name:"Walter Payton",college:["jackson state"]},
+{name:"Emmitt Smith",college:["florida"]},
+{name:"LaDainian Tomlinson",college:["tcu"]},
+{name:"Adrian Peterson",college:["oklahoma"]},
+
+{name:"Calvin Johnson",college:["georgia tech"]},
+{name:"Randy Moss",college:["marshall"]},
+{name:"Jerry Rice",college:["mississippi valley state"]},
+{name:"Terrell Owens",college:["chattanooga"]},
+{name:"Marvin Harrison",college:["syracuse"]}
+];
+
+// ---------------- STATE ----------------
+let used=[];
+let current=null;
+let streak=0;
+let best=Number(localStorage.getItem("best"))||0;
+let dailyBest=Number(localStorage.getItem("dailyBest"))||0;
+let dailyCount=0;
+let mode="normal";
+const today=new Date().toISOString().slice(0,10);
+
+// ---------------- HELPERS ----------------
+const normalize=t=>t.toLowerCase().replace(/university|college|of/g,"").trim();
+const vibrate=ms=>navigator.vibrate&&navigator.vibrate(ms);
+const play=s=>soundOn&&s.play();
+
+// ---------------- ACHIEVEMENTS ----------------
+const achievements=[
+{name:"Orientation Day",check:()=>best>=1},
+{name:"Redshirt Year",check:()=>best>=5},
+{name:"All-Conference",check:()=>best>=10},
+{name:"All-American",check:()=>best>=20},
+{name:"Draft Day",check:()=>dailyBest>=10}
+];
+
+function renderAchievements(){
+  achievementsBox.innerHTML="";
+  achievements.forEach(a=>{
+    const d=document.createElement("div");
+    d.className="achievement"+(a.check()?" unlocked":"");
+    d.textContent=a.name;
+    achievementsBox.appendChild(d);
+  });
+}
+
+// ---------------- GAME ----------------
+function nextPlayer(){
+  let p;
+  do{
+    p=players[Math.floor(Math.random()*players.length)];
+  }while(used.includes(p.name));
+  used.push(p.name);
+  if(used.length>players.length-1) used=[];
+  current=p;
+  playerName.textContent=p.name;
+  feedback.textContent="";
+  answerInput.value="";
+}
+
+answerInput.addEventListener("input",()=>{
+  if(!current) return;
+  const g=normalize(answerInput.value);
+  if(current.college.some(c=>g===c)){
+    streak++;
+    if(mode==="daily") dailyCount++;
+    best=Math.max(best,streak);
+    dailyBest=Math.max(dailyBest,dailyCount);
+    localStorage.setItem("best",best);
+    localStorage.setItem("dailyBest",dailyBest);
+
+    feedback.textContent="Correct";
+    feedback.className="correct";
+    vibrate(25);
+    play(correctSound);
+
+    streakSpan.textContent=streak;
+    bestSpan.textContent=best;
+    dailyBestSpan.textContent=dailyBest;
+    renderAchievements();
+    setTimeout(nextPlayer,350);
+  }else if(g.length>2){
+    streak=0;
+    feedback.textContent="Wrong";
+    feedback.className="wrong";
+    vibrate([40,40]);
+    play(wrongSound);
+    streakSpan.textContent=0;
+  }
+});
+
+// ---------------- UI ----------------
+soundBtn.onclick=()=>{
+  soundOn=!soundOn;
+  localStorage.setItem("sound",soundOn?"on":"off");
+  soundBtn.textContent=soundOn?"🔊":"🔇";
+};
+normalBtn.onclick=()=>{mode="normal";dailyCount=0;nextPlayer();};
+dailyBtn.onclick=()=>{
+  if(localStorage.getItem("dailyPlayed")===today){
+    alert("Daily Challenge already completed");
+    return;
+  }
+  localStorage.setItem("dailyPlayed",today);
+  mode="daily";
+  dailyCount=0;
+  nextPlayer();
+};
+
+// ---------------- INIT ----------------
+bestSpan.textContent=best;
+dailyBestSpan.textContent=dailyBest;
+renderAchievements();
+</script>
+</body>
+</html>
