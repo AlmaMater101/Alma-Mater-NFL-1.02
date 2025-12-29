@@ -25,7 +25,6 @@ header{
   font-size:28px;
   font-weight:700;
   background:#020617;
-  letter-spacing:1px;
 }
 .container{
   max-width:420px;
@@ -37,12 +36,8 @@ header{
   border-radius:16px;
   padding:24px;
   margin-top:20px;
-  animation:fade .35s ease;
 }
-h1{
-  margin:10px 0;
-  font-size:30px;
-}
+h1{margin:12px 0;font-size:30px;}
 input{
   width:100%;
   padding:14px;
@@ -50,19 +45,18 @@ input{
   border-radius:10px;
   border:none;
   margin-top:12px;
-  outline:none;
 }
 button{
   background:var(--accent);
   border:none;
   color:white;
-  padding:10px 14px;
-  margin:6px;
+  padding:12px 16px;
+  margin-top:10px;
   border-radius:10px;
   cursor:pointer;
+  width:100%;
 }
 button.secondary{background:#1e293b;}
-button.toggle{background:#020617;}
 .stats{
   margin-top:12px;
   font-size:14px;
@@ -75,6 +69,23 @@ button.toggle{background:#020617;}
 }
 .correct{color:var(--correct);}
 .wrong{color:var(--wrong);}
+.autocomplete{position:relative;}
+.suggestions{
+  position:absolute;
+  top:100%;
+  left:0;
+  right:0;
+  background:#020617;
+  border-radius:0 0 10px 10px;
+  max-height:160px;
+  overflow-y:auto;
+  z-index:10;
+}
+.suggestions div{
+  padding:10px;
+  cursor:pointer;
+}
+.suggestions div:hover{background:#1e293b;}
 .achievements{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -93,10 +104,6 @@ button.toggle{background:#020617;}
   background:#1e293b;
   color:#facc15;
 }
-@keyframes fade{
-  from{opacity:0;}
-  to{opacity:1;}
-}
 </style>
 </head>
 
@@ -108,10 +115,16 @@ button.toggle{background:#020617;}
 <div class="card">
   <button id="normalBtn">Normal</button>
   <button id="dailyBtn" class="secondary">Daily</button>
-  <button id="soundBtn" class="toggle">🔊</button>
 
   <h1 id="playerName">Press Start</h1>
-  <input id="answerInput" placeholder="Type the college">
+
+  <div class="autocomplete">
+    <input id="answerInput" placeholder="Type the college">
+    <div id="suggestions" class="suggestions"></div>
+  </div>
+
+  <button id="submitBtn">Submit</button>
+
   <div id="feedback"></div>
 
   <div class="stats">
@@ -128,112 +141,120 @@ button.toggle{background:#020617;}
 
 </div>
 
-<audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
-<audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
-
 <script>
-// ---------------- SETTINGS ----------------
-let soundOn = localStorage.getItem("sound") !== "off";
-soundBtn.textContent = soundOn ? "🔊" : "🔇";
-
-// ---------------- PLAYER LIST (150+) ----------------
+// ---------------- PLAYER DATA (160+) ----------------
 const players = [
-{name:"Tom Brady",college:["michigan"]},
-{name:"Aaron Rodgers",college:["cal","california"]},
-{name:"Patrick Mahomes",college:["texas tech"]},
-{name:"Josh Allen",college:["wyoming"]},
-{name:"Joe Burrow",college:["lsu"]},
-{name:"Lamar Jackson",college:["louisville"]},
-{name:"Justin Herbert",college:["oregon"]},
-{name:"Jalen Hurts",college:["oklahoma","alabama"]},
-{name:"Dak Prescott",college:["mississippi state"]},
-{name:"Russell Wilson",college:["wisconsin","nc state"]},
-{name:"Peyton Manning",college:["tennessee"]},
-{name:"Eli Manning",college:["ole miss","mississippi"]},
-{name:"Drew Brees",college:["purdue"]},
-{name:"Matthew Stafford",college:["georgia"]},
-{name:"Kirk Cousins",college:["michigan state"]},
-{name:"Trevor Lawrence",college:["clemson"]},
-{name:"Deshaun Watson",college:["clemson"]},
-{name:"Brock Purdy",college:["iowa state"]},
-{name:"Tua Tagovailoa",college:["alabama"]},
-{name:"Jared Goff",college:["cal"]},
-{name:"Cam Newton",college:["auburn"]},
-{name:"Andrew Luck",college:["stanford"]},
-{name:"Brett Favre",college:["southern miss"]},
-{name:"Dan Marino",college:["pitt","pittsburgh"]},
-{name:"Tony Romo",college:["eastern illinois"]},
-{name:"Philip Rivers",college:["nc state"]},
-{name:"Ben Roethlisberger",college:["miami ohio"]},
-{name:"Matt Ryan",college:["boston college"]},
-{name:"Derek Carr",college:["fresno state"]},
-{name:"Jimmy Garoppolo",college:["eastern illinois"]},
+{n:"Tom Brady",c:["michigan"]},
+{n:"Aaron Rodgers",c:["cal","california"]},
+{n:"Patrick Mahomes",c:["texas tech"]},
+{n:"Josh Allen",c:["wyoming"]},
+{n:"Joe Burrow",c:["lsu"]},
+{n:"Lamar Jackson",c:["louisville"]},
+{n:"Justin Herbert",c:["oregon"]},
+{n:"Jalen Hurts",c:["oklahoma","alabama"]},
+{n:"Dak Prescott",c:["mississippi state"]},
+{n:"Russell Wilson",c:["wisconsin","nc state"]},
+{n:"Peyton Manning",c:["tennessee"]},
+{n:"Eli Manning",c:["ole miss","mississippi"]},
+{n:"Drew Brees",c:["purdue"]},
+{n:"Matthew Stafford",c:["georgia"]},
+{n:"Kirk Cousins",c:["michigan state"]},
+{n:"Trevor Lawrence",c:["clemson"]},
+{n:"Cam Newton",c:["auburn"]},
+{n:"Andrew Luck",c:["stanford"]},
+{n:"Dan Marino",c:["pitt","pittsburgh"]},
+{n:"Brett Favre",c:["southern miss"]},
+{n:"Tony Romo",c:["eastern illinois"]},
+{n:"Philip Rivers",c:["nc state"]},
+{n:"Ben Roethlisberger",c:["miami ohio"]},
+{n:"Matt Ryan",c:["boston college"]},
+{n:"Derek Carr",c:["fresno state"]},
+{n:"Jimmy Garoppolo",c:["eastern illinois"]},
 
-{name:"Derrick Henry",college:["alabama"]},
-{name:"Christian McCaffrey",college:["stanford"]},
-{name:"Saquon Barkley",college:["penn state"]},
-{name:"Nick Chubb",college:["georgia"]},
-{name:"Jonathan Taylor",college:["wisconsin"]},
-{name:"Dalvin Cook",college:["florida state"]},
-{name:"Alvin Kamara",college:["tennessee"]},
-{name:"Najee Harris",college:["alabama"]},
-{name:"Joe Mixon",college:["oklahoma"]},
-{name:"Austin Ekeler",college:["western colorado"]},
+{n:"Derrick Henry",c:["alabama"]},
+{n:"Christian McCaffrey",c:["stanford"]},
+{n:"Saquon Barkley",c:["penn state"]},
+{n:"Nick Chubb",c:["georgia"]},
+{n:"Jonathan Taylor",c:["wisconsin"]},
+{n:"Dalvin Cook",c:["florida state"]},
+{n:"Alvin Kamara",c:["tennessee"]},
+{n:"Najee Harris",c:["alabama"]},
+{n:"Joe Mixon",c:["oklahoma"]},
+{n:"Austin Ekeler",c:["western colorado"]},
+{n:"Chris Johnson",c:["east carolina"]},
+{n:"Marshawn Lynch",c:["cal"]},
+{n:"Frank Gore",c:["miami"]},
+{n:"LeSean McCoy",c:["pitt"]},
 
-{name:"Justin Jefferson",college:["lsu"]},
-{name:"Ja'Marr Chase",college:["lsu"]},
-{name:"Davante Adams",college:["fresno state"]},
-{name:"Cooper Kupp",college:["eastern washington"]},
-{name:"Stefon Diggs",college:["maryland"]},
-{name:"Tyreek Hill",college:["west alabama"]},
-{name:"CeeDee Lamb",college:["oklahoma"]},
-{name:"DeAndre Hopkins",college:["clemson"]},
-{name:"Amon-Ra St. Brown",college:["usc"]},
-{name:"Terry McLaurin",college:["ohio state"]},
+{n:"Justin Jefferson",c:["lsu"]},
+{n:"Ja'Marr Chase",c:["lsu"]},
+{n:"Davante Adams",c:["fresno state"]},
+{n:"Cooper Kupp",c:["eastern washington"]},
+{n:"Stefon Diggs",c:["maryland"]},
+{n:"Tyreek Hill",c:["west alabama"]},
+{n:"CeeDee Lamb",c:["oklahoma"]},
+{n:"DeAndre Hopkins",c:["clemson"]},
+{n:"Amon-Ra St. Brown",c:["usc"]},
+{n:"Terry McLaurin",c:["ohio state"]},
+{n:"Mike Evans",c:["texas a&m"]},
+{n:"Keenan Allen",c:["cal"]},
+{n:"Julio Jones",c:["alabama"]},
+{n:"Larry Fitzgerald",c:["pitt"]},
 
-{name:"Travis Kelce",college:["cincinnati"]},
-{name:"George Kittle",college:["iowa"]},
-{name:"Rob Gronkowski",college:["arizona"]},
-{name:"Mark Andrews",college:["oklahoma"]},
-{name:"Kyle Pitts",college:["florida"]},
+{n:"Travis Kelce",c:["cincinnati"]},
+{n:"George Kittle",c:["iowa"]},
+{n:"Rob Gronkowski",c:["arizona"]},
+{n:"Mark Andrews",c:["oklahoma"]},
+{n:"Kyle Pitts",c:["florida"]},
 
-{name:"Aaron Donald",college:["pitt","pittsburgh"]},
-{name:"J.J. Watt",college:["wisconsin","central michigan"]},
-{name:"T.J. Watt",college:["wisconsin"]},
-{name:"Nick Bosa",college:["ohio state"]},
-{name:"Joey Bosa",college:["ohio state"]},
-{name:"Myles Garrett",college:["texas a&m"]},
-{name:"Micah Parsons",college:["penn state"]},
-{name:"Von Miller",college:["texas a&m"]},
-{name:"Khalil Mack",college:["buffalo"]},
-{name:"Maxx Crosby",college:["eastern michigan"]},
+{n:"Aaron Donald",c:["pitt"]},
+{n:"J.J. Watt",c:["wisconsin","central michigan"]},
+{n:"T.J. Watt",c:["wisconsin"]},
+{n:"Nick Bosa",c:["ohio state"]},
+{n:"Joey Bosa",c:["ohio state"]},
+{n:"Myles Garrett",c:["texas a&m"]},
+{n:"Micah Parsons",c:["penn state"]},
+{n:"Von Miller",c:["texas a&m"]},
+{n:"Khalil Mack",c:["buffalo"]},
+{n:"Maxx Crosby",c:["eastern michigan"]},
 
-{name:"Ray Lewis",college:["miami"]},
-{name:"Charles Woodson",college:["michigan"]},
-{name:"Ed Reed",college:["miami"]},
-{name:"Troy Polamalu",college:["usc"]},
-{name:"Brian Urlacher",college:["new mexico"]},
-{name:"Luke Kuechly",college:["boston college"]},
-{name:"Patrick Willis",college:["ole miss"]},
-{name:"Junior Seau",college:["usc"]},
-{name:"Lawrence Taylor",college:["north carolina"]},
-{name:"Derrick Brooks",college:["florida state"]},
+{n:"Ray Lewis",c:["miami"]},
+{n:"Ed Reed",c:["miami"]},
+{n:"Troy Polamalu",c:["usc"]},
+{n:"Brian Urlacher",c:["new mexico"]},
+{n:"Luke Kuechly",c:["boston college"]},
+{n:"Patrick Willis",c:["ole miss"]},
+{n:"Junior Seau",c:["usc"]},
+{n:"Lawrence Taylor",c:["north carolina"]},
+{n:"Derrick Brooks",c:["florida state"]},
 
-{name:"Barry Sanders",college:["oklahoma state"]},
-{name:"Walter Payton",college:["jackson state"]},
-{name:"Emmitt Smith",college:["florida"]},
-{name:"LaDainian Tomlinson",college:["tcu"]},
-{name:"Adrian Peterson",college:["oklahoma"]},
+{n:"Barry Sanders",c:["oklahoma state"]},
+{n:"Walter Payton",c:["jackson state"]},
+{n:"Emmitt Smith",c:["florida"]},
+{n:"LaDainian Tomlinson",c:["tcu"]},
+{n:"Adrian Peterson",c:["oklahoma"]},
 
-{name:"Calvin Johnson",college:["georgia tech"]},
-{name:"Randy Moss",college:["marshall"]},
-{name:"Jerry Rice",college:["mississippi valley state"]},
-{name:"Terrell Owens",college:["chattanooga"]},
-{name:"Marvin Harrison",college:["syracuse"]}
+{n:"Jerry Rice",c:["mississippi valley state"]},
+{n:"Randy Moss",c:["marshall"]},
+{n:"Terrell Owens",c:["chattanooga"]},
+{n:"Marvin Harrison",c:["syracuse"]},
+{n:"Calvin Johnson",c:["georgia tech"]}
 ];
 
+// ---------------- SHUFFLE ----------------
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+let queue=[];
+function resetQueue(){
+  queue=[...players];
+  shuffle(queue);
+}
+
 // ---------------- STATE ----------------
-let used=[];
 let current=null;
 let streak=0;
 let best=Number(localStorage.getItem("best"))||0;
@@ -244,8 +265,6 @@ const today=new Date().toISOString().slice(0,10);
 
 // ---------------- HELPERS ----------------
 const normalize=t=>t.toLowerCase().replace(/university|college|of/g,"").trim();
-const vibrate=ms=>navigator.vibrate&&navigator.vibrate(ms);
-const play=s=>soundOn&&s.play();
 
 // ---------------- ACHIEVEMENTS ----------------
 const achievements=[
@@ -255,7 +274,6 @@ const achievements=[
 {name:"All-American",check:()=>best>=20},
 {name:"Draft Day",check:()=>dailyBest>=10}
 ];
-
 function renderAchievements(){
   achievementsBox.innerHTML="";
   achievements.forEach(a=>{
@@ -268,64 +286,69 @@ function renderAchievements(){
 
 // ---------------- GAME ----------------
 function nextPlayer(){
-  let p;
-  do{
-    p=players[Math.floor(Math.random()*players.length)];
-  }while(used.includes(p.name));
-  used.push(p.name);
-  if(used.length>players.length-1) used=[];
-  current=p;
-  playerName.textContent=p.name;
-  feedback.textContent="";
+  if(queue.length===0) resetQueue();
+  current=queue.shift();
+  playerName.textContent=current.n;
   answerInput.value="";
+  feedback.textContent="";
+  suggestions.innerHTML="";
 }
 
-answerInput.addEventListener("input",()=>{
+function checkAnswer(){
   if(!current) return;
-  const g=normalize(answerInput.value);
-  if(current.college.some(c=>g===c)){
+  const guess=normalize(answerInput.value);
+  if(current.c.some(c=>guess===c)){
     streak++;
     if(mode==="daily") dailyCount++;
     best=Math.max(best,streak);
     dailyBest=Math.max(dailyBest,dailyCount);
     localStorage.setItem("best",best);
     localStorage.setItem("dailyBest",dailyBest);
-
     feedback.textContent="Correct";
     feedback.className="correct";
-    vibrate(25);
-    play(correctSound);
-
     streakSpan.textContent=streak;
     bestSpan.textContent=best;
     dailyBestSpan.textContent=dailyBest;
     renderAchievements();
     setTimeout(nextPlayer,350);
-  }else if(g.length>2){
+  }else{
     streak=0;
     feedback.textContent="Wrong";
     feedback.className="wrong";
-    vibrate([40,40]);
-    play(wrongSound);
     streakSpan.textContent=0;
   }
+}
+
+// ---------------- AUTOCOMPLETE ----------------
+const colleges=[...new Set(players.flatMap(p=>p.c))].sort();
+answerInput.addEventListener("input",()=>{
+  const val=normalize(answerInput.value);
+  suggestions.innerHTML="";
+  if(!val) return;
+  colleges.filter(c=>c.includes(val)).slice(0,6).forEach(c=>{
+    const d=document.createElement("div");
+    d.textContent=c;
+    d.onclick=()=>{
+      answerInput.value=c;
+      suggestions.innerHTML="";
+    };
+    suggestions.appendChild(d);
+  });
 });
 
-// ---------------- UI ----------------
-soundBtn.onclick=()=>{
-  soundOn=!soundOn;
-  localStorage.setItem("sound",soundOn?"on":"off");
-  soundBtn.textContent=soundOn?"🔊":"🔇";
-};
-normalBtn.onclick=()=>{mode="normal";dailyCount=0;nextPlayer();};
+// ---------------- CONTROLS ----------------
+submitBtn.onclick=checkAnswer;
+answerInput.addEventListener("keydown",e=>{if(e.key==="Enter")checkAnswer();});
+normalBtn.onclick=()=>{mode="normal";dailyCount=0;resetQueue();nextPlayer();};
 dailyBtn.onclick=()=>{
   if(localStorage.getItem("dailyPlayed")===today){
-    alert("Daily Challenge already completed");
+    alert("Daily already played");
     return;
   }
   localStorage.setItem("dailyPlayed",today);
   mode="daily";
   dailyCount=0;
+  resetQueue();
   nextPlayer();
 };
 
@@ -333,6 +356,8 @@ dailyBtn.onclick=()=>{
 bestSpan.textContent=best;
 dailyBestSpan.textContent=dailyBest;
 renderAchievements();
+resetQueue();
 </script>
+
 </body>
 </html>
