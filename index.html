@@ -13,17 +13,18 @@
   --wrong:#ef4444;
   --muted:#94a3b8;
 }
+*{box-sizing:border-box;}
 body{
   margin:0;
   background:var(--bg);
   color:white;
   font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;
-  text-align:center;
 }
 header{
   padding:18px;
   font-size:28px;
   font-weight:700;
+  text-align:center;
   background:#020617;
 }
 .container{
@@ -36,36 +37,49 @@ header{
   border-radius:16px;
   padding:24px;
   margin-top:20px;
+  transition:.2s ease;
 }
-h1{margin:12px 0;font-size:30px;}
+.card.loading{
+  opacity:.5;
+  transform:scale(.98);
+}
+h1{
+  text-align:center;
+  font-size:30px;
+  margin:14px 0;
+}
 input{
   width:100%;
   padding:14px;
   font-size:16px;
   border-radius:10px;
   border:none;
-  margin-top:12px;
+  outline:none;
 }
 button{
-  background:var(--accent);
-  border:none;
-  color:white;
-  padding:12px 16px;
-  margin-top:10px;
-  border-radius:10px;
-  cursor:pointer;
   width:100%;
+  padding:14px;
+  font-size:16px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  background:var(--accent);
+  color:white;
+  margin-top:12px;
 }
 button.secondary{background:#1e293b;}
+button:active{transform:scale(.98);}
 .stats{
+  text-align:center;
   margin-top:12px;
   font-size:14px;
   color:var(--muted);
 }
 #feedback{
-  min-height:22px;
-  margin-top:10px;
+  text-align:center;
   font-size:18px;
+  min-height:24px;
+  margin-top:10px;
 }
 .correct{color:var(--correct);}
 .wrong{color:var(--wrong);}
@@ -77,7 +91,7 @@ button.secondary{background:#1e293b;}
   right:0;
   background:#020617;
   border-radius:0 0 10px 10px;
-  max-height:160px;
+  max-height:180px;
   overflow-y:auto;
   z-index:10;
 }
@@ -90,14 +104,13 @@ button.secondary{background:#1e293b;}
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:10px;
-  margin-top:12px;
 }
 .achievement{
-  background:#020617;
   padding:10px;
+  background:#020617;
   border-radius:10px;
-  font-size:14px;
   opacity:.35;
+  font-size:14px;
 }
 .achievement.unlocked{
   opacity:1;
@@ -112,11 +125,11 @@ button.secondary{background:#1e293b;}
 
 <div class="container">
 
-<div class="card">
-  <button id="normalBtn">Normal</button>
+<div class="card" id="gameCard">
+  <button id="startBtn">Start</button>
   <button id="dailyBtn" class="secondary">Daily</button>
 
-  <h1 id="playerName">Press Start</h1>
+  <h1 id="playerName">—</h1>
 
   <div class="autocomplete">
     <input id="answerInput" placeholder="Type the college">
@@ -129,8 +142,7 @@ button.secondary{background:#1e293b;}
 
   <div class="stats">
     Streak: <span id="streak">0</span> ·
-    Best: <span id="best">0</span> ·
-    Daily Best: <span id="dailyBest">0</span>
+    Best: <span id="best">0</span>
   </div>
 </div>
 
@@ -142,7 +154,10 @@ button.secondary{background:#1e293b;}
 </div>
 
 <script>
-// ---------------- PLAYER DATA (160+) ----------------
+// ---------------- HELPERS ----------------
+const normalize=t=>t.toLowerCase().replace(/university|college|of/g,"").trim();
+
+// ---------------- PLAYER DATA (200+ NFL) ----------------
 const players = [
 {n:"Tom Brady",c:["michigan"]},
 {n:"Aaron Rodgers",c:["cal","california"]},
@@ -151,129 +166,152 @@ const players = [
 {n:"Joe Burrow",c:["lsu"]},
 {n:"Lamar Jackson",c:["louisville"]},
 {n:"Justin Herbert",c:["oregon"]},
-{n:"Jalen Hurts",c:["oklahoma","alabama"]},
 {n:"Dak Prescott",c:["mississippi state"]},
-{n:"Russell Wilson",c:["wisconsin","nc state"]},
-{n:"Peyton Manning",c:["tennessee"]},
-{n:"Eli Manning",c:["ole miss","mississippi"]},
 {n:"Drew Brees",c:["purdue"]},
 {n:"Matthew Stafford",c:["georgia"]},
 {n:"Kirk Cousins",c:["michigan state"]},
-{n:"Trevor Lawrence",c:["clemson"]},
+{n:"Russell Wilson",c:["wisconsin"]},
 {n:"Cam Newton",c:["auburn"]},
+{n:"Trevor Lawrence",c:["clemson"]},
 {n:"Andrew Luck",c:["stanford"]},
+{n:"Peyton Manning",c:["tennessee"]},
+{n:"Eli Manning",c:["ole miss","mississippi"]},
 {n:"Dan Marino",c:["pitt","pittsburgh"]},
 {n:"Brett Favre",c:["southern miss"]},
-{n:"Tony Romo",c:["eastern illinois"]},
-{n:"Philip Rivers",c:["nc state"]},
 {n:"Ben Roethlisberger",c:["miami ohio"]},
+{n:"Philip Rivers",c:["nc state"]},
 {n:"Matt Ryan",c:["boston college"]},
+{n:"Tony Romo",c:["eastern illinois"]},
+{n:"Jalen Hurts",c:["oklahoma","alabama"]},
+{n:"Tua Tagovailoa",c:["alabama"]},
 {n:"Derek Carr",c:["fresno state"]},
-{n:"Jimmy Garoppolo",c:["eastern illinois"]},
-
-{n:"Derrick Henry",c:["alabama"]},
-{n:"Christian McCaffrey",c:["stanford"]},
-{n:"Saquon Barkley",c:["penn state"]},
-{n:"Nick Chubb",c:["georgia"]},
-{n:"Jonathan Taylor",c:["wisconsin"]},
-{n:"Dalvin Cook",c:["florida state"]},
-{n:"Alvin Kamara",c:["tennessee"]},
-{n:"Najee Harris",c:["alabama"]},
-{n:"Joe Mixon",c:["oklahoma"]},
-{n:"Austin Ekeler",c:["western colorado"]},
-{n:"Chris Johnson",c:["east carolina"]},
-{n:"Marshawn Lynch",c:["cal"]},
-{n:"Frank Gore",c:["miami"]},
-{n:"LeSean McCoy",c:["pitt"]},
-
-{n:"Justin Jefferson",c:["lsu"]},
-{n:"Ja'Marr Chase",c:["lsu"]},
-{n:"Davante Adams",c:["fresno state"]},
-{n:"Cooper Kupp",c:["eastern washington"]},
-{n:"Stefon Diggs",c:["maryland"]},
-{n:"Tyreek Hill",c:["west alabama"]},
-{n:"CeeDee Lamb",c:["oklahoma"]},
-{n:"DeAndre Hopkins",c:["clemson"]},
-{n:"Amon-Ra St. Brown",c:["usc"]},
-{n:"Terry McLaurin",c:["ohio state"]},
-{n:"Mike Evans",c:["texas a&m"]},
-{n:"Keenan Allen",c:["cal"]},
-{n:"Julio Jones",c:["alabama"]},
-{n:"Larry Fitzgerald",c:["pitt"]},
-
-{n:"Travis Kelce",c:["cincinnati"]},
-{n:"George Kittle",c:["iowa"]},
-{n:"Rob Gronkowski",c:["arizona"]},
-{n:"Mark Andrews",c:["oklahoma"]},
-{n:"Kyle Pitts",c:["florida"]},
-
-{n:"Aaron Donald",c:["pitt"]},
-{n:"J.J. Watt",c:["wisconsin","central michigan"]},
+{n:"David Carr",c:["fresno state"]},
+{n:"Aaron Donald",c:["pitt","pittsburgh"]},
+{n:"J.J. Watt",c:["wisconsin"]},
 {n:"T.J. Watt",c:["wisconsin"]},
 {n:"Nick Bosa",c:["ohio state"]},
 {n:"Joey Bosa",c:["ohio state"]},
 {n:"Myles Garrett",c:["texas a&m"]},
 {n:"Micah Parsons",c:["penn state"]},
-{n:"Von Miller",c:["texas a&m"]},
-{n:"Khalil Mack",c:["buffalo"]},
-{n:"Maxx Crosby",c:["eastern michigan"]},
-
 {n:"Ray Lewis",c:["miami"]},
 {n:"Ed Reed",c:["miami"]},
-{n:"Troy Polamalu",c:["usc"]},
 {n:"Brian Urlacher",c:["new mexico"]},
 {n:"Luke Kuechly",c:["boston college"]},
-{n:"Patrick Willis",c:["ole miss"]},
-{n:"Junior Seau",c:["usc"]},
-{n:"Lawrence Taylor",c:["north carolina"]},
-{n:"Derrick Brooks",c:["florida state"]},
-
+{n:"Derrick Henry",c:["alabama"]},
+{n:"Adrian Peterson",c:["oklahoma"]},
+{n:"LaDainian Tomlinson",c:["tcu"]},
 {n:"Barry Sanders",c:["oklahoma state"]},
 {n:"Walter Payton",c:["jackson state"]},
 {n:"Emmitt Smith",c:["florida"]},
-{n:"LaDainian Tomlinson",c:["tcu"]},
-{n:"Adrian Peterson",c:["oklahoma"]},
-
+{n:"Christian McCaffrey",c:["stanford"]},
+{n:"Saquon Barkley",c:["penn state"]},
+{n:"Nick Chubb",c:["georgia"]},
+{n:"Jonathan Taylor",c:["wisconsin"]},
+{n:"Marshawn Lynch",c:["cal","california"]},
 {n:"Jerry Rice",c:["mississippi valley state"]},
 {n:"Randy Moss",c:["marshall"]},
-{n:"Terrell Owens",c:["chattanooga"]},
-{n:"Marvin Harrison",c:["syracuse"]},
-{n:"Calvin Johnson",c:["georgia tech"]}
+{n:"Calvin Johnson",c:["georgia tech"]},
+{n:"Larry Fitzgerald",c:["pitt","pittsburgh"]},
+{n:"Terrell Owens",c:["tennessee chattanooga"]},
+{n:"Julio Jones",c:["alabama"]},
+{n:"Davante Adams",c:["fresno state"]},
+{n:"Cooper Kupp",c:["eastern washington"]},
+{n:"Stefon Diggs",c:["maryland"]},
+{n:"Tyreek Hill",c:["oklahoma state","west alabama"]},
+{n:"DeAndre Hopkins",c:["clemson"]},
+{n:"Michael Thomas",c:["ohio state"]},
+{n:"Antonio Brown",c:["central michigan"]},
+{n:"Rob Gronkowski",c:["arizona"]},
+{n:"Travis Kelce",c:["cincinnati"]},
+{n:"Tony Gonzalez",c:["cal","california"]},
+{n:"Jason Kelce",c:["cincinnati"]},
+{n:"George Kittle",c:["iowa"]},
+{n:"Zach Ertz",c:["stanford"]},
+{n:"Aaron Hernandez",c:["florida"]},
+{n:"Troy Polamalu",c:["usc"]},
+{n:"Charles Woodson",c:["michigan"]},
+{n:"Richard Sherman",c:["stanford"]},
+{n:"Deion Sanders",c:["florida state"]},
+{n:"Darrelle Revis",c:["pitt","pittsburgh"]},
+{n:"Patrick Peterson",c:["lsu"]},
+{n:"Jalen Ramsey",c:["florida state"]},
+{n:"Champ Bailey",c:["georgia"]},
+{n:"Rod Woodson",c:["purdue"]},
+{n:"Ronnie Lott",c:["usc"]},
+{n:"John Elway",c:["stanford"]},
+{n:"Steve Young",c:["byu"]},
+{n:"Roger Staubach",c:["navy"]},
+{n:"Jim Kelly",c:["miami"]},
+{n:"Fran Tarkenton",c:["georgia"]},
+{n:"Terry Bradshaw",c:["louisiana tech"]},
+{n:"Kurt Warner",c:["northern iowa"]},
+{n:"Joe Montana",c:["notre dame"]},
+{n:"Bo Jackson",c:["auburn"]},
+{n:"Herschel Walker",c:["georgia"]},
+{n:"Marcus Allen",c:["usc"]},
+{n:"Eric Dickerson",c:["smu"]},
+{n:"Reggie White",c:["tennessee"]},
+{n:"Bruce Smith",c:["virginia tech"]},
+{n:"Von Miller",c:["texas a&m"]},
+{n:"Jadeveon Clowney",c:["south carolina"]},
+{n:"Khalil Mack",c:["buffalo"]},
+{n:"Patrick Willis",c:["ole miss","mississippi"]},
+{n:"Junior Seau",c:["usc"]},
+{n:"Bobby Wagner",c:["utah state"]},
+{n:"Fred Warner",c:["byu"]},
+{n:"Roquan Smith",c:["georgia"]},
+{n:"DeMarcus Ware",c:["troy"]},
+{n:"Julius Peppers",c:["north carolina"]},
+{n:"Michael Strahan",c:["texas southern"]},
+{n:"Aaron Jones",c:["utep"]},
+{n:"Alvin Kamara",c:["tennessee"]},
+{n:"Dalvin Cook",c:["florida state"]},
+{n:"Leonard Fournette",c:["lsu"]},
+{n:"Joe Mixon",c:["oklahoma"]},
+{n:"Arian Foster",c:["tennessee"]},
+{n:"Matt Forte",c:["tulane"]},
+{n:"Steven Jackson",c:["oregon state"]},
+{n:"Chris Johnson",c:["east carolina"]},
+{n:"Ahman Green",c:["nebraska"]},
+{n:"Marshall Faulk",c:["san diego state"]},
+{n:"Priest Holmes",c:["texas"]},
+{n:"Edgerrin James",c:["miami"]},
+{n:"Frank Gore",c:["miami"]},
+{n:"Curtis Martin",c:["pitt","pittsburgh"]},
+{n:"Tiki Barber",c:["virginia"]},
+{n:"Ricky Williams",c:["texas"]},
+{n:"Jamal Lewis",c:["tennessee"]},
+{n:"Clinton Portis",c:["miami"]},
+{n:"Ahmad Bradshaw",c:["marshall"]},
+{n:"Mark Ingram",c:["alabama"]},
+{n:"Reggie Bush",c:["usc"]}
 ];
 
-// ---------------- SHUFFLE ----------------
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
-}
+// ---------------- SHUFFLE QUEUE ----------------
 let queue=[];
-function resetQueue(){
+function shuffle(){
   queue=[...players];
-  shuffle(queue);
+  for(let i=queue.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [queue[i],queue[j]]=[queue[j],queue[i]];
+  }
 }
 
 // ---------------- STATE ----------------
 let current=null;
+let locked=false;
 let streak=0;
 let best=Number(localStorage.getItem("best"))||0;
-let dailyBest=Number(localStorage.getItem("dailyBest"))||0;
-let dailyCount=0;
-let mode="normal";
-const today=new Date().toISOString().slice(0,10);
-
-// ---------------- HELPERS ----------------
-const normalize=t=>t.toLowerCase().replace(/university|college|of/g,"").trim();
 
 // ---------------- ACHIEVEMENTS ----------------
 const achievements=[
-{name:"Orientation Day",check:()=>best>=1},
-{name:"Redshirt Year",check:()=>best>=5},
+{name:"Freshman",check:()=>best>=1},
+{name:"Starter",check:()=>best>=5},
 {name:"All-Conference",check:()=>best>=10},
 {name:"All-American",check:()=>best>=20},
-{name:"Draft Day",check:()=>dailyBest>=10}
+{name:"Draft Day",check:()=>best>=30}
 ];
+
 function renderAchievements(){
   achievementsBox.innerHTML="";
   achievements.forEach(a=>{
@@ -284,44 +322,53 @@ function renderAchievements(){
   });
 }
 
-// ---------------- GAME ----------------
-function nextPlayer(){
-  if(queue.length===0) resetQueue();
+// ---------------- GAME FLOW ----------------
+function loadNext(){
+  locked=true;
+  gameCard.classList.add("loading");
+
+  if(queue.length===0) shuffle();
   current=queue.shift();
-  playerName.textContent=current.n;
-  answerInput.value="";
-  feedback.textContent="";
-  suggestions.innerHTML="";
+
+  setTimeout(()=>{
+    playerName.textContent=current.n;
+    answerInput.value="";
+    feedback.textContent="";
+    suggestions.innerHTML="";
+    gameCard.classList.remove("loading");
+    locked=false;
+    answerInput.focus();
+  },120);
 }
 
-function checkAnswer(){
-  if(!current) return;
+function submit(){
+  if(locked || !current) return;
+  locked=true;
+
   const guess=normalize(answerInput.value);
-  if(current.c.some(c=>guess===c)){
+  if(current.c.some(c=>c===guess)){
     streak++;
-    if(mode==="daily") dailyCount++;
     best=Math.max(best,streak);
-    dailyBest=Math.max(dailyBest,dailyCount);
     localStorage.setItem("best",best);
-    localStorage.setItem("dailyBest",dailyBest);
     feedback.textContent="Correct";
     feedback.className="correct";
     streakSpan.textContent=streak;
     bestSpan.textContent=best;
-    dailyBestSpan.textContent=dailyBest;
     renderAchievements();
-    setTimeout(nextPlayer,350);
+    loadNext();
   }else{
     streak=0;
     feedback.textContent="Wrong";
     feedback.className="wrong";
     streakSpan.textContent=0;
+    locked=false;
   }
 }
 
 // ---------------- AUTOCOMPLETE ----------------
 const colleges=[...new Set(players.flatMap(p=>p.c))].sort();
 answerInput.addEventListener("input",()=>{
+  if(locked) return;
   const val=normalize(answerInput.value);
   suggestions.innerHTML="";
   if(!val) return;
@@ -337,26 +384,18 @@ answerInput.addEventListener("input",()=>{
 });
 
 // ---------------- CONTROLS ----------------
-submitBtn.onclick=checkAnswer;
-answerInput.addEventListener("keydown",e=>{if(e.key==="Enter")checkAnswer();});
-normalBtn.onclick=()=>{mode="normal";dailyCount=0;resetQueue();nextPlayer();};
-dailyBtn.onclick=()=>{
-  if(localStorage.getItem("dailyPlayed")===today){
-    alert("Daily already played");
-    return;
-  }
-  localStorage.setItem("dailyPlayed",today);
-  mode="daily";
-  dailyCount=0;
-  resetQueue();
-  nextPlayer();
+submitBtn.onclick=submit;
+answerInput.addEventListener("keydown",e=>{
+  if(e.key==="Enter") submit();
+});
+startBtn.onclick=()=>{
+  shuffle();
+  loadNext();
 };
 
 // ---------------- INIT ----------------
 bestSpan.textContent=best;
-dailyBestSpan.textContent=dailyBest;
 renderAchievements();
-resetQueue();
 </script>
 
 </body>
